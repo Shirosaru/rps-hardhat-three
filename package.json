@@ -9,6 +9,7 @@
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
+    "dotenv": "^17.2.3",
     "ethers": "^6.15.0",
     "hardhat": "^2.26.3",
     "ts-node": "^10.9.2",
