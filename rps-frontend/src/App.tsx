@@ -55,7 +55,10 @@ function App() {
     const createTx = await game.createGame(choice);
     await createTx.wait();
 
-    setStatus("Game created!");
+    // 🔍 Get the latest game ID after creation
+    const newGameId = await game.gameIdCounter();
+    setGameId(Number(newGameId)); // update input box
+    setStatus(`Game created! Game ID: ${newGameId}`);
   };
 
   const approveAndJoinGame = async () => {
@@ -71,6 +74,27 @@ function App() {
     await joinTx.wait();
 
     setStatus("Game joined!");
+  };
+
+  const getGameResult = async () => {
+    if (!game) return;
+
+    try {
+      const result = await game.getGameResult(gameId);
+      const [player1, choice1, player2, choice2, winner] = result;
+
+      const choiceToText = (choice: number) => {
+        return ["None", "Rock", "Paper", "Scissors"][choice];
+      };
+
+      setStatus(`🧾 Game ID: ${gameId}
+  Player 1: ${player1} chose ${choiceToText(choice1)}
+  Player 2: ${player2} chose ${choiceToText(choice2)}
+  🏆 Winner: ${winner === ethers.ZeroAddress ? "Draw" : winner}`);
+    } catch (err) {
+      console.error(err);
+      setStatus("❌ Could not fetch game result. Game may not be completed.");
+    }
   };
 
   return (
@@ -105,6 +129,9 @@ function App() {
           </label>
           <br />
           <button onClick={approveAndJoinGame}>🎯 Join Game</button>
+          <br />
+          <br />
+          <button onClick={getGameResult}>📊 Get Game Result</button>
           <br />
           <br />
           <p>Status: {status}</p>

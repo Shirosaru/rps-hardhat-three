@@ -6,60 +6,60 @@ dotenv.config();
 
 async function main() {
   const provider = new JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
-
   const deployer = new Wallet(process.env.PRIVATE_KEY_1!, provider);
   const player1 = new Wallet(process.env.PRIVATE_KEY_2!, provider);
   const player2 = new Wallet(process.env.PRIVATE_KEY_3!, provider);
 
-  console.log("Deployer ETH:", ethers.formatEther(await provider.getBalance(deployer.address)));
-  console.log("Player1 ETH:", ethers.formatEther(await provider.getBalance(player1.address)));
-  console.log("Player2 ETH:", ethers.formatEther(await provider.getBalance(player2.address)));
+  console.log("Deployer:", deployer.address);
+  console.log("Player1:", player1.address);
+  console.log("Player2:", player2.address);
 
-  const tokenAddress = "0x84A444e5BB47Ff8cE066937aDe1c1650A91574b4"; // <- REPLACE with actual
-  const gameAddress = "0xd049930c5B42b4903f61e17140dec393c94178c7";   // <- REPLACE with actual
+  const tokenAddress = "0x84A444e5BB47Ff8cE066937aDe1c1650A91574b4"; // Your deployed ERC20 token
 
+  // ✅ DEPLOY the updated RockPaperScissors contract
+  const GameFactory = await ethers.getContractFactory("RockPaperScissors", deployer);
+  const game = await GameFactory.deploy(tokenAddress);
+  await game.waitForDeployment();
+
+  const gameAddress = await game.getAddress();
+  console.log("✅ RockPaperScissors deployed at:", gameAddress);
+
+  // ✅ Send tokens to players
   const token = await ethers.getContractAt("ERC20Token", tokenAddress, deployer);
-  const game = await ethers.getContractAt("RockPaperScissors", gameAddress, deployer);
+  const transferAmount = ethers.parseEther("100");
 
-  const amountToPlay = ethers.parseEther("10");
-
-  // 💸 Send tokens from deployer to players
   console.log("Transferring tokens to players...");
-  await token.transfer(player1.address, ethers.parseEther("100"));
-  await token.transfer(player2.address, ethers.parseEther("100"));
+  await token.transfer(player1.address, transferAmount);
+  await token.transfer(player2.address, transferAmount);
 
-  // ✅ DEBUG: Check balances and allowances
-  console.log("\n✅ Checking balances and allowances:");
-  console.log("Player1 address:", player1.address);
-  console.log("Player2 address:", player2.address);
-  console.log("Game contract address:", gameAddress);
-
-  console.log("Player1 token balance:", await token.balanceOf(player1.address));
-  console.log("Player2 token balance:", await token.balanceOf(player2.address));
-  console.log("Player1 allowance:", await token.allowance(player1.address, gameAddress));
-  console.log("Player2 allowance:", await token.allowance(player2.address, gameAddress));
-
-  // ✅ Players approve the game contract to spend their tokens
+  // ✅ Approve tokens
   const tokenAsPlayer1 = token.connect(player1);
   const tokenAsPlayer2 = token.connect(player2);
+  const amountToPlay = ethers.parseEther("10");
 
-  // ✅ Players approve the game contract to spend their tokens
   await tokenAsPlayer1.approve(gameAddress, amountToPlay);
   await tokenAsPlayer2.approve(gameAddress, amountToPlay);
 
-  // ✅ Player 1 creates a game with Rock (1)
-  const tx = await game.connect(player1).createGame(1);
-  await tx.wait(); // Ensure the transaction is mined
-  console.log("✅ Game created!");
+  // ✅ Create + Join game
+  const tx1 = await game.connect(player1).createGame(1); // Rock
+  await tx1.wait();
 
-  // ✅ Player 2 joins the game with Scissors (3)
-  await game.connect(player2).joinGame(1, 3);
-  console.log("✅ Player 2 joined the game!");
+  const tx2 = await game.connect(player2).joinGame(1, 3); // Scissors
+  await tx2.wait();
 
-  console.log("✅ Game played successfully!");
+  console.log("✅ Game created and played!");
+
+  // ✅ (Optional) Fetch result
+  const result = await game.getGameResult(1);
+  console.log("🧾 Game Result:");
+  console.log("Player1:", result[0]);
+  console.log("Choice1:", result[1]);
+  console.log("Player2:", result[2]);
+  console.log("Choice2:", result[3]);
+  console.log("Winner :", result[5]);
 }
 
 main().catch((err) => {
-  console.error("❌ Error:", err);
+  console.error("❌ Script error:", err);
   process.exitCode = 1;
 });
