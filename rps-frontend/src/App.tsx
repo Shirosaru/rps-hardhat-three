@@ -243,7 +243,10 @@ Player 2: ${p2} chose ${toText(c2)}
             <div>
               <h4>🛠 Game Info</h4>
               <pre style={{ fontSize: 14, background: "#eee", padding: 12 }}>
-                {JSON.stringify(gameData, null, 2)}
+                {JSON.stringify(gameData, (key, value) =>
+                  typeof value === "bigint" ? value.toString() : value, 
+                  2
+                )}
               </pre>
             </div>
           )}
@@ -252,7 +255,10 @@ Player 2: ${p2} chose ${toText(c2)}
             <div>
               <h4>🏁 Outcome</h4>
               <pre style={{ fontSize: 14, background: "#e8f4e8", padding: 12 }}>
-                {JSON.stringify(outcome, null, 2)}
+                {JSON.stringify(outcome, (key, value) =>
+                  typeof value === "bigint" ? value.toString() : value, 
+                  2
+                )}
               </pre>
             </div>
           )}
